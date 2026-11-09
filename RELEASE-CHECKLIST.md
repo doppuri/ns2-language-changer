@@ -1,4 +1,4 @@
-# Release gates (private draft)
+# Experimental source prerelease gates (not general-use acceptance)
 
 - [x] Include the complete **exact successful trial's** source tree,
       bootstrap and native payload (not a pristine-upstream substitute).
@@ -21,5 +21,6 @@
       retain upstream attribution and do not assign a made-up upstream license.
 - [x] Owner confirms redistribution is acceptable and requests the all-in-one
       source shape; retain upstream attribution without inventing a license.
-- [ ] Reinspect final package inventory and destination before public rollout.
-      A private source repo or draft asset does not certify hardware/cleanup.
+- [ ] Complete assembled launcher and future-run cleanup live acceptance before
+      claiming a working general-use release. Public source availability by
+      itself does not certify hardware/cleanup.
