@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'region-language-restore.cjs'),'utf8');
 const JA='6a61000000000000', EN='656e2d5553000000';
-function fixture({region=1,language=EN,denied=false,languageError=false,regionError=false,readbackWrong=false,prior=1}={}) {
+function fixture({region=1,language=EN,denied=false,languageError=false,regionError=false,rollbackError=false,readbackWrong=false,prior=1}={}) {
  const files=new Map(),calls=[];let currentRegion=region,currentLanguage=language;
  const runtime={local:(s,suffix)=>'/fake/'+s+suffix,
   read:async file=>file.endsWith('-region-same-value.json')?
@@ -30,6 +30,7 @@ function fixture({region=1,language=EN,denied=false,languageError=false,regionEr
   }
   assert.equal(request.handle,101);
   if(request.id===57){if(regionError&&request.hex==='00000000')return {result:0x202};
+   if(rollbackError&&request.hex==='01000000')return {result:0x202};
    currentRegion=request.hex==='00000000'?0:1;return {result:0}}
   if(request.id===0){if(languageError&&request.hex===JA)return {result:0x202};
    currentLanguage=readbackWrong&&request.hex===JA?EN:request.hex;return {result:0}}
@@ -45,9 +46,30 @@ test('region1/en-US restores to region0/ja with two acknowledged readbacks',asyn
  assert.equal(f.proof().regionBeforeTarget,1);assert.equal(f.proof().languageAfterTarget,JA);
 });
 test('wrong original or stale same-value proof forbids all writes',async()=>{
- for(const opts of [{region:0},{language:JA},{prior:0}]){
+ for(const opts of [{region:0},{language:'6672000000000000'},{prior:0}]){
   const f=fixture(opts);await assert.rejects(f.run());assert.deepEqual(f.writes(),[]);
  }
+});
+test('post-reboot region1/ja normalizes to region0/ja without language setter',async()=>{
+ const f=fixture({language:JA}),result=await f.run();
+ assert.equal(result.status,'JAPANESE_TARGET_READBACK_NO_RESTORE');
+ assert.equal(result.languageChanged,false);assert.equal(f.proof().mixedStateRecovery,true);
+ assert.deepEqual(f.writes(),[[57,'00000000']]);
+ assert.equal(f.proof().intermediateLanguage,JA);assert.equal(f.proof().intermediateRegion,0);
+});
+test('mixed-state region setter error rolls back original region1 once and never writes language',async()=>{
+ const f=fixture({language:JA,regionError:true});await assert.rejects(f.run(),/not acknowledged/);
+ assert.deepEqual(f.writes(),[[57,'00000000'],[57,'01000000']]);
+ assert.equal(f.proof().status,'ABORT_RESTORED');
+});
+test('mixed-state ambiguous target and failed rollback remains uncertain, never retries',async()=>{
+ const f=fixture({language:JA,regionError:true,rollbackError:true});await assert.rejects(f.run());
+ assert.deepEqual(f.writes(),[[57,'00000000'],[57,'01000000']]);
+ assert.equal(f.proof().status,'RESTORE_UNCERTAIN_STOP_NO_RETRY');
+});
+test('mixed state with unavailable setter refuses without any write',async()=>{
+ const f=fixture({language:JA,denied:true});await assert.rejects(f.run(),/setter/);
+ assert.deepEqual(f.writes(),[]);
 });
 test('set:sys denial forbids all writes',async()=>{
  const f=fixture({denied:true});await assert.rejects(f.run(),/setter/);assert.deepEqual(f.writes(),[]);

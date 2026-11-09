@@ -13,16 +13,31 @@ all-in-one wrapper. It contains no private console logs or pairing material.
 - `switch2-eiadiX` read back region 1/`en-US` and an independent HDMI image
   showed English System Settings. HOME immediately afterward remained Japanese.
   This run's top-level result was not verified because 51 exact-owned save
-  scratch nodes remained. A reboot-persistence result has not been established.
+  scratch nodes remained. The later private cleanup-only run `switch2-XYz7IW`
+  removed exactly those 51 nodes, committed, and verified root absence from a
+  newly cloned SAVE (pipeline/result both `verified:true`); this does not
+  retroactively turn the English-setting run into a verified all-in-one run.
+  Following owner-authorized terms acceptance and a separately witnessed OS
+  restart, fresh HDMI showed both HOME and System Settings in Japanese.
+  English Settings UI **did not persist in that observed reboot path**.
+  On a subsequent independently witnessed full OS reboot, a separate
+  app-only, read-only `set` getter probe read RegionCode **1** and
+  LanguageCode **ja** twice (private receipt SHA-256
+  `e24a388152013d920380d26591f537ff558a2886ef6c6c23dea54071fbd44a39`).
+  No setter or FS acquisition was attempted in that probe. This proves the
+  mixed mutable state at that later observation, not which reboot caused the
+  language reversion or any hardware SKU change.
 - The acquisition/bootstrap/native payload in this tree derive from that
   exact English-settings trial. The executed acquisition probe SHA-256 is
   `428939bd5ed1798533f862c09fac1b863cf38cac85ed9a5bd8026ccc3e284e6e`;
   the executed English stage SHA-256 is
   `5813772586945d36a00771b822d410366ed3adf7d8ce4330ac22c872a47cbedc`.
   The new standalone reverse stage follows the historical Japanese-first
-  setter order, but the assembled wrapper and this stage have **not** run
+  setter order for `1`/`en-US`, and adds a host-tested no-language-write
+  branch for `1`/`ja`. The assembled wrapper and this stage have **not** run
   together on a console.
 
 Source-only tests establish preflight/rollback logic, not new-console
-compatibility. The local exact-owned cleanup prototype lives outside this
-source candidate and is not a user-facing cleanup command.
+compatibility. The now live-proven *private, exact-eiadiX-owned* cleanup runner
+lives outside this source candidate and is not a user-facing cleanup command.
+The newly assembled English/restore wrapper is still untested on a console.

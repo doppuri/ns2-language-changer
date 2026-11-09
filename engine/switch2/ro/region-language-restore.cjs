@@ -75,8 +75,10 @@ async function main(memory){
     proof.originalLanguage=language(firstLanguageReply,'original language');
     proof.originalLanguageSecond=await getLanguage('original language second');
     check(proof.originalRegion===1 && proof.originalRegionSecond===1 &&
-      proof.originalLanguage===EN_US && proof.originalLanguageSecond===EN_US,
-      'Original mutable settings differ from region1/en-US; no write');
+      [JA,EN_US].includes(proof.originalLanguage) &&
+      proof.originalLanguageSecond===proof.originalLanguage,
+      'Original mutable settings differ from stable region1/ja or region1/en-US; no write');
+    proof.mixedStateRecovery=proof.originalLanguage===JA;await save(file,proof);
     // Current FW must map language enum AmericanEnglish(1) to the documented en-US u64.
     const mapped=await ipc(getter,2,'01000000');
     proof.englishMappingWire=mapped.hex;
@@ -90,12 +92,14 @@ async function main(memory){
     proof.setterLookup=sys;await save(file,proof);
     check(!sys.transport && sys.result===0 && sys.moves?.length===1,
       'No authorized mutable system settings setter');setter=sys.moves[0];
-    // The real UFdgPh and USy2I1 round trips restored ja FIRST, then region 0.
-    // Preserve that observed order instead of introducing a novel intermediate state.
-    proof.languageTargetPossiblyAdmitted=true;proof.status='LANGUAGE_JA_POSSIBLY_ADMITTED';await save(file,proof);
-    proof.languageTargetReply=await ipc(setter,0,JA);await save(file,proof);
-    check(!proof.languageTargetReply.transport && proof.languageTargetReply.result===0,
-      'SetLanguageCode(ja) not acknowledged');
+    // Already-ja after reboot: never issue an unnecessary language setter.
+    // The normal 1/en-US path keeps the historically observed Japanese-first order.
+    if(!proof.mixedStateRecovery){
+      proof.languageTargetPossiblyAdmitted=true;proof.status='LANGUAGE_JA_POSSIBLY_ADMITTED';await save(file,proof);
+      proof.languageTargetReply=await ipc(setter,0,JA);await save(file,proof);
+      check(!proof.languageTargetReply.transport && proof.languageTargetReply.result===0,
+        'SetLanguageCode(ja) not acknowledged');
+    }
     proof.intermediateLanguage=await getLanguage('Japanese readback');
     proof.regionBeforeTarget=await getRegion('region before target');await save(file,proof);
     check(proof.intermediateLanguage===JA && proof.regionBeforeTarget===1,
@@ -112,7 +116,7 @@ async function main(memory){
     proof.status='JAPANESE_TARGET_READBACK_NO_RESTORE';proof.finished=new Date().toISOString();
     proof.uiJapaneseVerified=false;proof.restorationIntentionallySkipped=true;
     await save(file,proof);
-    return {file,status:proof.status,languageChanged:true,languageRestored:false,
+    return {file,status:proof.status,languageChanged:!proof.mixedStateRecovery,languageRestored:false,
       regionRestored:false,restorationIntentionallySkipped:true};
   }catch(e){
     proof.error=e.stack;
