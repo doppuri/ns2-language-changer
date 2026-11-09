@@ -13,7 +13,8 @@
       console; independently check UI and reboot persistence.
 - [ ] Test a second console/build or clearly restrict to the tested firmware
       and SmileBASIC version; never claim arbitrary-offset compatibility.
-- [ ] Settle the upstream redistribution basis before a public full-source
-      GitHub repository or release. No author contact without owner approval.
+- [x] Owner explicitly directs full-source bundling without author contact;
+      retain upstream attribution and do not assign a made-up upstream license.
 - [ ] Reinspect final package inventory and destination; public push/tag/
-      release remain prohibited until the preceding gates are met.
+      release remain prohibited until hardware/cleanup and final privacy gates
+      are met.
