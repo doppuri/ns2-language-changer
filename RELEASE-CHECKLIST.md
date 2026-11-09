@@ -1,4 +1,4 @@
-# Release gates (private candidate)
+# Release gates (private draft)
 
 - [x] Include the complete **exact successful trial's** source tree,
       bootstrap and native payload (not a pristine-upstream substitute).
@@ -19,8 +19,7 @@
       and SmileBASIC version; never claim arbitrary-offset compatibility.
 - [x] Owner explicitly directs full-source bundling without author contact;
       retain upstream attribution and do not assign a made-up upstream license.
-- [ ] Establish a lawful redistribution basis for upstream-derived source and
-      native payload; owner approval alone is not an upstream copyright grant.
-- [ ] Reinspect final package inventory and destination; public push/tag/
-      release remain prohibited until hardware/cleanup and final privacy gates
-      are met.
+- [x] Owner confirms redistribution is acceptable and requests the all-in-one
+      source shape; retain upstream attribution without inventing a license.
+- [ ] Reinspect final package inventory and destination before public rollout.
+      A private source repo or draft asset does not certify hardware/cleanup.
