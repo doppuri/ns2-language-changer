@@ -17,10 +17,9 @@
       host tests or a prior setting-stage proof with this assembled run.
 - [ ] Test a second console/build or clearly restrict to the tested firmware
       and SmileBASIC version; never claim arbitrary-offset compatibility.
-- [x] Owner explicitly directs full-source bundling without author contact;
-      retain upstream attribution and do not assign a made-up upstream license.
-- [x] Owner confirms redistribution is acceptable and requests the all-in-one
-      source shape; retain upstream attribution without inventing a license.
+- [x] Include upstream revision attribution in `THIRD-PARTY.md` and the README.
+- [x] Preserve the requested all-in-one source shape; do not replace it with
+      an adapter-only or patch-only archive.
 - [ ] Complete assembled launcher and future-run cleanup live acceptance before
       claiming a working general-use release. Public source availability by
       itself does not certify hardware/cleanup.

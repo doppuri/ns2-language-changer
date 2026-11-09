@@ -1,6 +1,6 @@
 # Switch 2 mutable language experiment — all-in-one source prerelease
 
-**Experimental source, not a validated general-use tool.** Prior English-setting and Japanese-restoration stages were tested on a console; the newly assembled all-in-one launcher has not run end-to-end. This is the full integrated source tree based on the *actual* trial configuration, not a patch on pristine upstream. The pinned upstream `pepsipu/ns2jb` commit `95f5525089273c5fce0b95047f3600f8442e96ae` had no tracked license when checked on 2026-11-09. The owner directs bundling its upstream-derived source without contacting the author; see [THIRD-PARTY.md](THIRD-PARTY.md) for provenance. **Do not treat the prerelease or passing host tests as a working general-use tool:** assembled launcher, new-run scratch recovery and persistence gates remain unverified.
+**Experimental source, not a validated general-use tool.** Prior English-setting and Japanese-restoration stages were tested on a console; the newly assembled all-in-one launcher has not run end-to-end. This is the full integrated source tree based on the *actual* trial configuration, not a patch on pristine upstream. The upstream-derived source is attributed to `pepsipu/ns2jb` commit `95f5525089273c5fce0b95047f3600f8442e96ae`; see [THIRD-PARTY.md](THIRD-PARTY.md) for provenance. **Do not treat the prerelease or passing host tests as a working general-use tool:** assembled launcher, new-run scratch recovery and persistence gates remain unverified.
 
 ## What the scripts change
 
@@ -51,7 +51,7 @@ Before labeling this a working all-in-one release: live-test the mixed (`1`, `ja
 
 これはSwitch 2の**可変な本体設定の地域コードと言語コード**を調べるための、英語化・日本語復元コードを含む**全部入りソースの実験版**です。英語の説明と同じソースを指します。工場出荷時の地域情報、PRODINFO、シリアル番号、証明書、鍵、アカウントの国、DNS、本体更新を変更するものではありません。国内版のSKU制限解除や任天堂オンライン利用が可能になるとは主張しません。
 
-対象として観測した組み合わせは**本体FW 23.0.1／SmileBASIC 4.4.9**です。別の本体・ビルドでの動作保証はなく、オフライン／90DNSを保ってください。`bootstrap.bas`、取得・保持処理、native payload、`enable-english.cjs`／`restore-japanese.cjs` を同じソースツリーに収めています。上流由来コードは `pepsipu/ns2jb` のコミット `95f5525089273c5fce0b95047f3600f8442e96ae` に由来します。出典は [THIRD-PARTY.md](THIRD-PARTY.md) を参照してください。上流に存在しないライセンスを付与したものではありません。
+対象として観測した組み合わせは**本体FW 23.0.1／SmileBASIC 4.4.9**です。別の本体・ビルドでの動作保証はなく、オフライン／90DNSを保ってください。`bootstrap.bas`、取得・保持処理、native payload、`enable-english.cjs`／`restore-japanese.cjs` を同じソースツリーに収めています。上流由来コードは `pepsipu/ns2jb` のコミット `95f5525089273c5fce0b95047f3600f8442e96ae` に由来します。出典は [THIRD-PARTY.md](THIRD-PARTY.md) を参照してください。
 
 ### 何を読み書きするか
 
