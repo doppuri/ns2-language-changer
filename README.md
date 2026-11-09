@@ -42,3 +42,29 @@ A separate owner-private module used an independently verified reboot, a one-use
 **Japanese restoration of the mutable settings has been demonstrated:** the earlier real runs `switch2-USy2I1` and `switch2-UFdgPh` both wrote `ja` then region `0` and read back both original values; an interrupted `switch2-Cb2mZo` run also recorded `ABORT_RESTORED` with both readbacks. Those runs were overall unsuccessful for separate pipeline/cleanup reasons; they do not prove that the *new wrapper* has run on a console. The successful English-setting trial (`switch2-eiadiX`) read back RegionCode `1` and LanguageCode `en-US`; an unedited image showed **English System Settings**. Its immediate HOME screen remained Japanese. After the owner-authorized terms confirmation and independently witnessed full reboot, both HOME and System Settings were visibly **Japanese**. On a *subsequent* independently witnessed full OS reboot, a separate app-only `set` getter probe read **RegionCode `1` and LanguageCode `ja` twice**, with no setter or FS acquisition (private receipt SHA-256 `e24a388152013d920380d26591f537ff558a2886ef6c6c23dea54071fbd44a39`). This proves that the English language code did not survive that observed reboot sequence, while the mutable region remained `1` at the later read. It does not isolate exactly which reboot reverted the language. The observed mixed state (`1`, `ja`) failed both original assembled modes. This revision adds a host-tested mixed-state restore branch; it has not been live-validated and must not be claimed to have normalized the console. Second-device compatibility, this assembled runner's live behavior, and the new standalone reverse mode's on-console behavior remain **unverified**. The original eiadiX result was `verified:false` despite its earlier setting readback; its owned scratch was subsequently cleared by the separate verified cleanup-only run. Host tests are not a substitute for these checks. Keep the console offline/90DNS as configured; this candidate never requests Nintendo online access or modifies factory identity.
 
 Before labeling this a working all-in-one release: live-test the mixed (`1`, `ja`) recovery with explicit rollback to its actual original values and new raw-bound exact-owned scratch cleanup; test assembled forward/reverse on separately witnessed boots; diagnose the language reset without treating UI text as a getter; audit private data and file-by-file source/payload provenance, retain upstream attribution, then review the final archive and publication destination. A published source prerelease is not proof that its assembled launcher works on other consoles.
+
+---
+
+## 日本語での説明
+
+### この配布物について
+
+これはSwitch 2の**可変な本体設定の地域コードと言語コード**を調べるための、英語化・日本語復元コードを含む**全部入りソースの実験版**です。英語の説明と同じソースを指します。工場出荷時の地域情報、PRODINFO、シリアル番号、証明書、鍵、アカウントの国、DNS、本体更新を変更するものではありません。国内版のSKU制限解除や任天堂オンライン利用が可能になるとは主張しません。
+
+対象として観測した組み合わせは**本体FW 23.0.1／SmileBASIC 4.4.9**です。別の本体・ビルドでの動作保証はなく、オフライン／90DNSを保ってください。`bootstrap.bas`、取得・保持処理、native payload、`enable-english.cjs`／`restore-japanese.cjs` を同じソースツリーに収めています。上流由来コードは `pepsipu/ns2jb` のコミット `95f5525089273c5fce0b95047f3600f8442e96ae` に由来します。出典は [THIRD-PARTY.md](THIRD-PARTY.md) を参照してください。上流に存在しないライセンスを付与したものではありません。
+
+### 何を読み書きするか
+
+FS-contextのブリッジ経由で、`set` の `GetLanguageCode`（コマンド0）・`GetRegionCode`（4）と `MakeLanguageCode`（2）を確認し、`set:sys` の `SetLanguageCode`（0）・`SetRegionCode`（57）を使います。英語化は **地域0／`ja` → 地域1／`en-US`**、復元は **地域1／`en-US` または地域1／`ja` → 地域0／`ja`** を意図します。地域1／`en-US` の復元は先に言語を `ja` に戻し、次に地域を0にします。地域1／`ja` では不要な言語書込みを省きます。書込み前に一回限りの試行を記録し、応答が不明な書込みを推測で再送しません。成功判定はゲッターの読戻しであり、HOMEや再起動後の表示の保証ではありません。
+
+### 実機で確認済みのこと／未確認のこと
+
+以前の実機試行 `switch2-eiadiX` では地域1／`en-US` を読戻し、英語の**本体設定**を画面で確認しました。ただし直後のHOMEは日本語でした。`switch2-USy2I1` と `switch2-UFdgPh` の設定段階では `ja` → 地域0の順に書き戻し、両値を読戻しました。別の清掃専用実行では以前のSAVE scratch 51件を所有範囲に限定して削除・commitし、新しいSAVE cloneから不存在を確認しています。これらは**実機の結果**です。
+
+一方、このリポジトリで**新たに組み立てた起動スクリプト全体**と、地域1／`ja`からの新しい復元分岐は、まだ実機で通し実行していません。別の再起動後の読取り専用観測では地域1／`ja`を2回確認しており、英語表示の再起動後の持続性も未証明です。過去の51件の清掃を、これからの実行で発生するscratchの清掃済み証拠として流用しないでください。[EVIDENCE.md](EVIDENCE.md) と [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) に区別を記録しています。
+
+### 事前確認と安全上の制限
+
+Node.js 22以降で `node run.cjs --check-only` を実行すると、ソースを検査するだけで本体に接続せず、STARTも送信しません。ホストテストは `node --test admission.test.cjs recovery/recovery.test.cjs $(find engine -name '*.test.cjs' | sort)` です。これは**実機動作テストの代わりではありません**。
+
+本体操作では完全なOS起動ごとにSTARTは一度だけです。使ったか不明なSTARTや入力を再送しないでください。`admission.json` の自己申告は独立した起動・画面・接続先の証明ではありません。現時点では、新しい実行のSAVE scratchについて `recovery/` に所有rawへ拘束する検査・削除コアはありますが、一般ユーザー向けの実機清掃コマンド、別起動の照合、新しいSAVE cloneでの不存在確認は揃っていません。**このプレリリースをそのまま本体で動かす手順として案内しません。**失敗時は実行フォルダーを保全し、未知のSAVEファイルを消さず、ログ・接続token・端末固有情報を公開Issueへ貼らないでください。
