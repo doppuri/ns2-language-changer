@@ -90,6 +90,7 @@ async function sourceDigest() {
     }
   }
   await walk('engine');
+  await walk('recovery');
   const entries = [];
   for (const name of names.sort()) entries.push([name,
     crypto.createHash('sha256').update(await fs.readFile(path.join(__dirname, name))).digest('hex')]);

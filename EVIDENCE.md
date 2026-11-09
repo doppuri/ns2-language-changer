@@ -40,4 +40,8 @@ all-in-one wrapper. It contains no private console logs or pairing material.
 Source-only tests establish preflight/rollback logic, not new-console
 compatibility. The now live-proven *private, exact-eiadiX-owned* cleanup runner
 lives outside this source candidate and is not a user-facing cleanup command.
+The added `recovery/` library derives an exact SAVE tree from a **new** run's
+SHA-bound raw and producer and checks content/foreign nodes before journaled
+nonrecursive cleanup. Synthetic host tests pass; there is no live recovery CLI,
+independent current-boot admission, or fresh-SAVE absence proof for a new run.
 The newly assembled English/restore wrapper is still untested on a console.

@@ -9,7 +9,9 @@
 - [x] Run the current complete host suite and source-only preflight.
 - [x] Recover exact eiadiX 51-node SAVE scratch on an independently new boot;
       validated all entries, nonrecursive deletion, commit and fresh-clone absence.
-      **A future new run's scratch still needs its own raw-bound cleanup.**
+      Future-run source-only raw-bound planner/cleanup core/adapter are included
+      and host-tested; **a live recovery CLI, distinct-boot admission and fresh
+      SAVE absence proof for a new run remain unimplemented.**
 - [ ] Execute the assembled wrapper and new mixed-state restore stage on a
       console; independently check UI and reboot persistence. Do not equate
       host tests or a prior setting-stage proof with this assembled run.
