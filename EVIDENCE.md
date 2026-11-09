@@ -34,14 +34,16 @@ all-in-one wrapper. It contains no private console logs or pairing material.
   `5813772586945d36a00771b822d410366ed3adf7d8ce4330ac22c872a47cbedc`.
   The new standalone reverse stage follows the historical Japanese-first
   setter order for `1`/`en-US`, and adds a host-tested no-language-write
-  branch for `1`/`ja`. The assembled wrapper and this stage have **not** run
-  together on a console.
+  branch for `1`/`ja`. These source additions follow the prior console trials;
+  the console results above come from their individually identified runs.
 
-Source-only tests establish preflight/rollback logic, not new-console
-compatibility. The now live-proven *private, exact-eiadiX-owned* cleanup runner
-lives outside this source candidate and is not a user-facing cleanup command.
+Host tests cover preflight/rollback logic; the console results above are
+from the individually identified trials. The live-proven *private,
+exact-eiadiX-owned* cleanup runner lives outside this source candidate and is
+not a user-facing cleanup command.
 The added `recovery/` library derives an exact SAVE tree from a **new** run's
 SHA-bound raw and producer and checks content/foreign nodes before journaled
 nonrecursive cleanup. Synthetic host tests pass; there is no live recovery CLI,
 independent current-boot admission, or fresh-SAVE absence proof for a new run.
-The newly assembled English/restore wrapper is still untested on a console.
+The integrated English/restore wrapper is distributed here as experimental
+source; the observations above identify the earlier console stages precisely.
