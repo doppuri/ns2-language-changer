@@ -1,70 +1,138 @@
-# Switch 2 mutable language experiment — all-in-one source prerelease
+# ns2-language-changer
 
-This experimental all-in-one source tree is based on the **actual console trial** configuration, not a patch on pristine upstream. The console read back region 1 / `en-US` and showed English System Settings; separate runs read back the restored Japanese settings. The integrated launcher adds a mixed-state restore branch and per-boot admission logic. The upstream-derived source is attributed to `pepsipu/ns2jb` commit `95f5525089273c5fce0b95047f3600f8442e96ae`; see [THIRD-PARTY.md](THIRD-PARTY.md) for provenance. Read [EVIDENCE.md](EVIDENCE.md) for individual run results.
+A temporary region and language settings changer for Japanese Nintendo Switch 2 consoles, operating through a live [ns2jb](https://gitlab.com/kurumuz/ns2jb) RPC session.
 
-## What the scripts change
+Japanese-region Switch 2 consoles do not officially support changing the system language. This tool allows you to temporarily change the system region and language settings to English through ns2jb.
 
-The scripts target **mutable system settings**, not hardware region identity, calibration/PRODINFO, account country, firmware, or network/DNS settings. The source-bound FS-context bridge obtains the authorized `set` getter and `set:sys` setter. Commands and payloads:
+**This is a session-only modification. Changes are not persistent across console reboots.** The language settings will revert when the console is restarted.
 
-| Purpose | Service, command | Payload/readback |
-|---|---|---|
-| Read LanguageCode | `set`, `0` | 8-byte NUL-terminated language code, canonicalized before writing |
-| Read RegionCode | `set`, `4` | little-endian 32-bit enum |
-| Verify firmware language mapping | `set`, `2` | enum `0` → `ja\0`; enum `1` → `en-US\0` |
-| Set LanguageCode | `set:sys`, `0` | canonical 8 bytes: `6a61000000000000` (`ja`) or `656e2d5553000000` (`en-US`) |
-| Set RegionCode | `set:sys`, `57` | little-endian `00000000` (Japan) or `01000000` (American region) |
+The original project's README is preserved in [README-original.md](README-original.md).
 
-`english`: requires region `0`, language `ja`; checks a same-value region write first; writes region `1`, reads it back, then writes `en-US` and reads it back. `restore`: requires stable region `1` with language `en-US` **or** `ja`, checks a same-value region `1` write first, writes `ja` only if originally `en-US`, then writes region `0` and reads back region `0`/`ja`. The Japanese-first `en-US` path matches two earlier console round trips; the branch for the observed post-reboot mixed `1`/`ja` state passes host tests. A setter's possible admission is journaled **before** dispatch; ambiguous results are not retried. Failure after a target write attempts one rollback to the original values and reports uncertainty if rollback cannot be verified. Both operations intentionally keep the target after successful readback. Neither claims an English/Japanese HOME screen without separate imagery.
+## Features
 
-## Where the integration sits
+- **Temporary language switching:** Change the system language of a Japanese-region Switch 2 to English (`en-US`).
+- **Region setting modification:** Modify the system region code alongside the language setting.
+- **Japanese restoration:** Restore the original Japanese region and language settings.
+- **Live session attachment:** Operates through an existing ns2jb RPC session without requiring modifications to ns2jb itself.
+- **Safety mechanisms:**
+  - Verifies the current system settings before making changes.
+  - Journals every setting write before dispatch.
+  - Prevents repeated execution within the same session.
+  - Attempts a single rollback if a failure occurs after a target write.
+  - Stops without retrying when a write operation has an uncertain outcome.
 
-- `bootstrap.bas`: the exact trial SmileBASIC 4.4.9 bootstrap with pointer/hash/CRC checks and FW-specific function offsets. It does not contain an account, console key or device identifier. A *different* firmware or SmileBASIC build is not supported by swapping a single arbitrary offset.
-- `engine/lib/` and `engine/shared/`: the upstream-derived host bridge, protocol and SDK reference data.
-- `engine/switch2/app/`, `memory/`, `retained/`, `ro/`, and `process/`: the **actual successful trial's modified acquisition, retention, FS memory IPC, and native payload tree**. Do not replace these with pristine upstream files. The executed acquisition and setting-file SHA-256 digests are recorded in [EVIDENCE.md](EVIDENCE.md).
-- `engine/switch2/ro/region-same-value.cjs`: one candidate change selects region `0` or `1` for the same-value prerequisite according to the requested mode. `region-language-roundtrip.cjs` is the original successful English setting stage. `region-language-restore.cjs` is the new reverse stage, including a host-tested mixed-state branch.
-- `engine/switch2/pipeline.cjs`: one candidate change chooses the English or reverse stage, while leaving the acquisition and retirement sequence in place. `run.cjs` selects a local-network host IP dynamically and checks the local source tree, and `admission.cjs` records one attempt per claimed OS boot. The packaged host scripts no longer depend on the owner's private boot-pins file. **Operator confirmations are not independent console telemetry.**
-- `engine/switch2/ro/english-active-home.cjs` and `english-active-capture.cjs` are fail-closed compatibility placeholders: the original English stage imports the former as an unused default argument. Historical absolute HDMI paths and HOME routes have been removed; neither helper sends input or captures an image. An independent, current-scene observation is still required.
+This tool does not execute the exploit, perform console pairing, or send console input. It only attaches to an already established ns2jb session.
 
-`recovery/` now includes the source-only, host-tested **future-run SAVE scratch** planner, exact-tree/file-byte validator, nonrecursive cleanup core and mounted-SAVE adapter. They bind an actual run's raw SHA to the pinned producer SHA, reject foreign children, and journal each possible removal before dispatch. **There is no console recovery CLI or live boot/peer/lease binding in this package.** Calling these libraries or seeing an acknowledged commit does *not* establish fresh SAVE clone absence; the result reports it false until independently checked. Do not invoke them manually against a live console or reuse an old run's raw receipt. This narrows an engineering gap but does not clear the live cleanup/release gate.
+## Requirements
 
-Read [EVIDENCE.md](EVIDENCE.md) for run-level versus setting-level proof, [THIRD-PARTY.md](THIRD-PARTY.md) for provenance, and [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) for remaining gates.
+- A Japanese-region Nintendo Switch 2 console.
+- A working ns2jb setup using a vanilla (unmodified) checkout.
+- A live, held ns2jb RPC session:
+  ```sh
+  node run.cjs --rpc <lan-ip>
+  ```
+- Supported firmware and software versions:
+  - Firmware 23.0.1
+  - SmileBASIC 4.4.9
+  - SmileBASIC 4.4.6 Demo (as supported by the upstream pipeline)
+- The ns2jb runner must remain active throughout the operation.
+- The corresponding `runs/switch2-XXXXXX` run folder generated by ns2jb.
 
-## Host-only preflight
+The run folder must contain:
 
-With Node.js 22+ installed, `node run.cjs --check-only` hashes the candidate source tree and opens **no** console connection. Host test command: `node --test admission.test.cjs recovery/recovery.test.cjs $(find engine -name '*.test.cjs' | sort)`.
+- `switch2/current-acquisition.json`
+- `switch2/ro/<session>-sm-proof.json`
+- `switch2/fs-execution-current.json`, with:
+  - `retainedEndpoint.ready`
+  - `cleanup.deferred`
 
-The provisional command shapes are `node enable-english.cjs --admission admission.json [computer-IP]` and `node restore-japanese.cjs --admission admission.json [computer-IP]` (or `node run.cjs --mode english|restore ...`). These commands are experimental, not a one-click procedure for other consoles: safe operation requires independently verified boot, scene, and exact-owned SAVE recovery. The private recovery runner was bound to a specific historical run, not packaged as a general-user tool. An admission JSON would contain precisely `bootId`, `mode`, and four `true` confirmations: `confirmedFreshOsBoot`, `confirmedNoPendingOwnedScratch`, `confirmedSavedNs2`, `confirmedStartUnused`. The launcher consumes the boot ID before opening a listener; it refuses unresolved prior runs, but it cannot prove that the human claims are true. Do not invent a fresh boot ID to retry on the same OS boot. A pending 51-node save scratch needs raw-bound, nonrecursive, exact-owned cleanup on a **distinct** boot; no prefix-wide deletion. Run logs can contain private console data; never upload them.
+## Quick Start
 
-## Evidence and remaining gates
+1. Start an ns2jb RPC session using a vanilla ns2jb checkout:
 
-A separate owner-private module used an independently verified reboot, a one-use cleanup-only START, the exact-owned 51-node **same-SAVE** cleaner, commit and a fresh SAVE clone to prove absence. The private `switch2-XYz7IW` result and cleanup pipeline both report `verified:true`, `removed:51`, `freshSaveAbsenceVerified:true`, with source/run pins retained privately. This is not a general-user recovery tool. The older save-only cleaner assumes a different mount arrangement and remains unsafe for this run.
+   ```sh
+   node run.cjs --rpc <lan-ip>
+   ```
 
-**Japanese restoration of the mutable settings has been demonstrated:** the earlier real runs `switch2-USy2I1` and `switch2-UFdgPh` both wrote `ja` then region `0` and read back both original values; an interrupted `switch2-Cb2mZo` run also recorded `ABORT_RESTORED` with both readbacks. Those runs had separate pipeline/cleanup outcomes; their readbacks are setting-stage results. The successful English-setting trial (`switch2-eiadiX`) read back RegionCode `1` and LanguageCode `en-US`; an unedited image showed **English System Settings**. Its immediate HOME screen remained Japanese. After the owner-authorized terms confirmation and independently witnessed full reboot, both HOME and System Settings were visibly **Japanese**. On a *subsequent* independently witnessed full OS reboot, a separate app-only `set` getter probe read **RegionCode `1` and LanguageCode `ja` twice**, with no setter or FS acquisition (private receipt SHA-256 `e24a388152013d920380d26591f537ff558a2886ef6c6c23dea54071fbd44a39`). This proves that the English language code did not survive that observed reboot sequence, while the mutable region remained `1` at the later read. It does not isolate exactly which reboot reverted the language. The observed mixed state (`1`, `ja`) failed both original assembled modes. This revision adds a host-tested mixed-state restore branch. The later observed console state was region `1` / `ja`; no subsequent console normalization is claimed. The observed version combination, not second-device compatibility, defines the evidence here. The original eiadiX result was `verified:false` despite its earlier setting readback; its owned scratch was subsequently cleared by the separate verified cleanup-only run. Host tests cover the new source logic; the separate console observations above establish the setting-stage outcomes. Keep the console offline/90DNS as configured; this candidate never requests Nintendo online access or modifies factory identity.
+2. Keep the ns2jb runner running and locate the generated run folder:
 
-For a general-use release, establish mixed (`1`, `ja`) recovery with rollback and new raw-bound exact-owned scratch cleanup, then check forward/reverse operations on separately witnessed boots and diagnose the language reset with getters. This experimental source prerelease documents the prior console setting results and the newly integrated source separately.
+   ```text
+   runs/switch2-XXXXXX
+   ```
 
----
+3. Navigate to this project's directory and check the environment:
 
-## 日本語での説明
+   ```sh
+   node main.cjs --check-only
+   ```
 
-### この配布物について
+4. Switch the system language to English:
 
-これはSwitch 2の**可変な本体設定の地域コードと言語コード**を調べるための、英語化・日本語復元コードを含む**全部入りソースの実験版**です。英語の説明と同じソースを指します。工場出荷時の地域情報、PRODINFO、シリアル番号、証明書、鍵、アカウントの国、DNS、本体更新を変更するものではありません。国内版のSKU制限解除や任天堂オンライン利用が可能になるとは主張しません。
+   ```sh
+   node main.cjs <run-folder> --mode english
+   ```
 
-対象として観測した組み合わせは**本体FW 23.0.1／SmileBASIC 4.4.9**です。別の本体・ビルドでの動作保証はなく、オフライン／90DNSを保ってください。`bootstrap.bas`、取得・保持処理、native payload、`enable-english.cjs`／`restore-japanese.cjs` を同じソースツリーに収めています。上流由来コードは `pepsipu/ns2jb` のコミット `95f5525089273c5fce0b95047f3600f8442e96ae` に由来します。出典は [THIRD-PARTY.md](THIRD-PARTY.md) を参照してください。
+5. To restore the original Japanese settings during the same boot session:
 
-### 何を読み書きするか
+   ```sh
+   node main.cjs <run-folder> --mode restore
+   ```
 
-FS-contextのブリッジ経由で、`set` の `GetLanguageCode`（コマンド0）・`GetRegionCode`（4）と `MakeLanguageCode`（2）を確認し、`set:sys` の `SetLanguageCode`（0）・`SetRegionCode`（57）を使います。英語化は **地域0／`ja` → 地域1／`en-US`**、復元は **地域1／`en-US` または地域1／`ja` → 地域0／`ja`** を意図します。地域1／`en-US` の復元は先に言語を `ja` に戻し、次に地域を0にします。地域1／`ja` では不要な言語書込みを省きます。書込み前に一回限りの試行を記録し、応答が不明な書込みを推測で再送しません。成功判定はゲッターの読戻しであり、HOMEや再起動後の表示の保証ではありません。
+**Important:** Do not terminate the ns2jb runner with Ctrl-C while this tool is running. Once the operation has completed, release the runner. If any target setting was written, restart the console only after the tool has finished.
 
-### 実機で確認した結果
+## Usage
 
-以前の実機試行 `switch2-eiadiX` では地域1／`en-US` を読戻し、英語の**本体設定**を画面で確認しました。ただし直後のHOMEは日本語でした。`switch2-USy2I1` と `switch2-UFdgPh` の設定段階では `ja` → 地域0の順に書き戻し、両値を読戻しました。別の清掃専用実行では以前のSAVE scratch 51件を所有範囲に限定して削除・commitし、新しいSAVE cloneから不存在を確認しています。これらは**実機の結果**です。
+### English mode
 
-別の再起動後の読取り専用観測では地域1／`ja`を2回確認しました。つまりこの観測で英語表示の再起動後持続は示されていません。今回の**新しい統合起動スクリプト**には、この混在状態からの復元分岐とホスト側の安全確認を追加しています。過去の51件の清掃を、今後発生するscratchの清掃済み証拠として流用しないでください。試行ごとの結果と配布ソースの関係は [EVIDENCE.md](EVIDENCE.md) に記録しています。
+```sh
+node main.cjs <run-folder> --mode english
+```
 
-### 事前確認と安全上の制限
+Requires the current region and language to be `0` / `ja`.
 
-Node.js 22以降で `node run.cjs --check-only` を実行すると、ソースを検査するだけで本体に接続せず、STARTも送信しません。ホストテストは `node --test admission.test.cjs recovery/recovery.test.cjs $(find engine -name '*.test.cjs' | sort)` です。新しい分岐・起動判定・復旧ロジックのソース検査です。
+The tool performs the following operations:
 
-本体操作では完全なOS起動ごとにSTARTは一度だけです。使ったか不明なSTARTや入力を再送しないでください。`admission.json` の自己申告は独立した起動・画面・接続先の証明ではありません。現時点では、新しい実行のSAVE scratchについて `recovery/` に所有rawへ拘束する検査・削除コアはありますが、一般ユーザー向けの実機清掃コマンド、別起動の照合、新しいSAVE cloneでの不存在確認は揃っていません。これは実験用ソースの配布で、他の本体向けのワンクリック操作手順ではありません。失敗時は実行フォルダーを保全し、未知のSAVEファイルを消さず、ログ・接続token・端末固有情報を公開Issueへ貼らないでください。
+1. Changes the region code to `1`.
+2. Reads back the region code to verify the change.
+3. Changes the system language to `en-US`.
+4. Reads back the language setting to verify the change.
+
+The resulting settings are kept for the current boot session. No automatic restoration is performed.
+
+### Restore mode
+
+```sh
+node main.cjs <run-folder> --mode restore
+```
+
+Requires either:
+
+- Region `1` / Language `en-US`, or
+- The observed mixed state of Region `1` / Language `ja`.
+
+The tool restores the original Japanese settings:
+
+1. Changes the language to `ja` if necessary.
+2. Changes the region code to `0`.
+3. Reads back the settings to verify the result.
+
+### Exit codes
+
+| Code | Description |
+|---|---|
+| `0` | Target settings successfully verified through readback. |
+| `1` | Operation refused or failed before any potentially accepted write. |
+| `3` | A setting write has an uncertain outcome. Stop immediately, do not retry, restart the console, and preserve all receipts. |
+| `4` | No live held session found (missing or retired run folder or endpoint). |
+
+### Session limitations and safety
+
+- Only one settings modification attempt is permitted per held session.
+- If an existing `-settings-*.json` receipt is found in `switch2/ro/`, further dispatches are blocked.
+- Writes are journaled before dispatch and are never automatically replayed after an ambiguous outcome.
+- If a failure occurs after a target write, the tool attempts one rollback with readback verification. If the outcome remains uncertain, it stops without retrying.
+- Service handles (`set` and `set:sys`) are closed through a `finally` path.
+
+**Persistence warning:** This tool does not permanently change the console's system language. The modified settings only apply to the current running session and are not preserved across a console reboot.
+
+**Privacy warning:** Run logs, receipts, and tokens may contain private console data. Do not publish or share them.

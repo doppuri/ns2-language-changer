@@ -1,9 +1,0 @@
-# Generated run receipts can contain console addresses, tokens and raw memory.
-/runs/
-/dumps/
-/admission.json
-/connection.json
-/connect.txt
-*.log
-*.jsonl
-.DS_Store
