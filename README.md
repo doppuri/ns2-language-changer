@@ -6,7 +6,7 @@ Japanese-region Switch 2 consoles do not officially support changing the system 
 
 **This is a session-only modification. Changes are not persistent across console reboots.** The language settings will revert when the console is restarted.
 
-The original project's README is preserved in [README-original.md](README-original.md).
+The original project's README is preserved in [README-original.md](README_original.md).
 
 ## Features
 
